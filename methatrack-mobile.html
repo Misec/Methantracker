@@ -607,6 +607,8 @@ function handlePhoto(event) {
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       currentPhotoData = canvas.toDataURL('image/jpeg', 0.7);
+      // Uložit ihned do localStorage — Android Chrome může resetovat JS state
+      try { localStorage.setItem('mf_pending_photo', currentPhotoData); } catch(e) {}
       const preview = document.getElementById('photoPreview');
       preview.src = currentPhotoData;
       preview.classList.add('has-photo');
@@ -643,7 +645,7 @@ function saveFinding() {
     severity: sev,
     action: document.getElementById('f-action').value.trim(),
     note: document.getElementById('f-note').value.trim(),
-    photo: currentPhotoData || null,
+    photo: currentPhotoData || localStorage.getItem('mf_pending_photo') || null,
     timestamp: new Date().toISOString(),
     tech: 'Michal Esterka',
     status: 'open',
@@ -652,6 +654,7 @@ function saveFinding() {
 
   findings.push(finding);
   save();
+  localStorage.removeItem('mf_pending_photo');
 
   showToast('✅ Nález uložen!');
   clearForm();
@@ -820,6 +823,16 @@ function showToast(msg, err) {
 
 // ══ INIT ══════════════════════════════════════════════
 updateHeader();
+// Obnovit foto pokud bylo vyfoceno před reload stránky
+const pendingPhoto = localStorage.getItem('mf_pending_photo');
+if(pendingPhoto) {
+  currentPhotoData = pendingPhoto;
+  const preview = document.getElementById('photoPreview');
+  preview.src = pendingPhoto;
+  preview.classList.add('has-photo');
+  document.getElementById('photoPlaceholder').style.display = 'none';
+  showToast('📷 Foto obnoveno po reload');
+}
 </script>
 </body>
 </html>
