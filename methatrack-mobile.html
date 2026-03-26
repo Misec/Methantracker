@@ -597,12 +597,24 @@ function handlePhoto(event) {
   if(!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    currentPhotoData = e.target.result;
-    const preview = document.getElementById('photoPreview');
-    preview.src = currentPhotoData;
-    preview.classList.add('has-photo');
-    document.getElementById('photoPlaceholder').style.display = 'none';
-    showToast('📷 Foto přidáno');
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if(w > h) { if(w > MAX) { h = Math.round(h*(MAX/w)); w = MAX; } }
+      else { if(h > MAX) { w = Math.round(w*(MAX/h)); h = MAX; } }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      currentPhotoData = canvas.toDataURL('image/jpeg', 0.7);
+      const preview = document.getElementById('photoPreview');
+      preview.src = currentPhotoData;
+      preview.classList.add('has-photo');
+      document.getElementById('photoPlaceholder').style.display = 'none';
+      const kb = Math.round(currentPhotoData.length * 0.75 / 1024);
+      showToast('📷 Foto přidáno (' + kb + ' KB)');
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
